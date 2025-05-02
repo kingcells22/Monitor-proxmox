@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard Proxmox</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <style>
+        .pointer { cursor: pointer; }
+        #vm-detail-panel { min-height: 200px; }
+        .header-bar {
+            background: #222;
+            color: #fff;
+            padding: 10px 20px;
+            margin-bottom: 20px;
+        }
+        .logout-link {
+            color: #fff;
+            text-decoration: none;
+        }
+        .logout-link:hover {
+            color: #f8f9fa;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body class="bg-light">
+<div class="header-bar">
+    <div class="container d-flex justify-content-between align-items-center">
+        <div>Usuario: <strong>{{ user }}</strong></div>
+        <div><a href="/logout" class="logout-link">Cerrar sesión</a></div>
+    </div>
+</div>
+<div class="container mt-4">
+    <h1 class="mb-4">Dashboard Proxmox</h1>
+    <h2>Nodos</h2>
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Status</th>
+                <th>Uptime</th>
+                <th>Memoria usada</th>
+                <th>Memoria total</th>
+                <th>CPU</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for node in nodes %}
+            <tr>
+                <td>{{ node.node }}</td>
+                <td>{{ node.status }}</td>
+                <td>{{ node.uptime }}</td>
+                <td>{{ node.mem }}</td>
+                <td>{{ node.maxmem }}</td>
+                <td>{{ node.cpu }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <h2>VMs</h2>
+    <div class="row">
+        <div class="col-md-7">
+            <table class="table table-bordered table-hover table-striped" id="vms-table">
+                <thead>
+                    <tr>
+                        <th>Nodo</th>
+                        <th>VMID</th>
+                        <th>Nombre</th>
+                        <th>Status</th>
+                        <th>CPU</th>
+                        <th>Memoria usada</th>
+                        <th>Memoria total</th>
+                        <th>Ver detalle</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for vm in vms %}
+                    <tr class="pointer" data-node="{{ vm.node }}" data-vmid="{{ vm.vmid }}">
+                        <td>{{ vm.node }}</td>
+                        <td>{{ vm.vmid }}</td>
+                        <td>{{ vm.name }}</td>
+                        <td>{{ vm.status }}</td>
+                        <td>{{ vm.cpu }}</td>
+                        <td>{{ vm.mem }}</td>
+                        <td>{{ vm.maxmem }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary btn-detail" data-node="{{ vm.node }}" data-vmid="{{ vm.vmid }}">Ver</button>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="col-md-5">
+            <div class="card" id="vm-detail-panel">
+                <div class="card-header">
+                    <strong>Detalle de VM</strong>
+                </div>
+                <div class="card-body" id="vm-detail-body">
+                    <em>Selecciona una VM para ver su información.</em>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll(".btn-detail").forEach(function(btn) {
+            btn.addEventListener("click", function(e) {
+                e.preventDefault();
+                const node = btn.getAttribute("data-node");
+                const vmid = btn.getAttribute("data-vmid");
+                const detailPanel = document.getElementById("vm-detail-body");
+                detailPanel.innerHTML = "<em>Cargando...</em>";
+                fetch(`/vm/${node}/${vmid}`)
+                    .then(resp => {
+                        if (!resp.ok) throw new Error("Error al obtener detalle");
+                        return resp.json();
+                    })
+                    .then(data => {
+                        let html = "<table class='table table-sm'>";
+                        html += `<tr><th>Nombre</th><td>${data.name || "-"}</td></tr>`;
+                        html += `<tr><th>ID</th><td>${data.vmid || "-"}</td></tr>`;
+                        html += `<tr><th>Estado</th><td>${data.status || "-"}</td></tr>`;
+                        html += `<tr><th>IP</th><td>${data.ip || "-"}</td></tr>`;
+                        html += "</table>";
+                        detailPanel.innerHTML = html;
+                    })
+                    .catch(err => {
+                        detailPanel.innerHTML = "<span class='text-danger'>No se pudo obtener el detalle de la VM.</span>";
+                    });
+            });
+        });
+    });
+    </script>
+</body>
+</html>

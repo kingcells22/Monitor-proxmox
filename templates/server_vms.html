@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>VMs en {{ server.name }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f5f5f5; }
+        .header { background: #222; color: #fff; padding: 10px 20px; }
+        .logout { float: right; }
+        .container { margin: 30px auto; width: 90%; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px #aaa; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background: #eee; }
+        .back-link { margin-bottom: 20px; display: inline-block; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        Usuario: <b>{{ user }}</b>
+        <span class="logout"><a href="/logout" style="color:#fff;">Cerrar sesión</a></span>
+    </div>
+    <div class="container">
+        <a class="back-link" href="/servers">&larr; Volver a la lista de servidores</a>
+        <h2>VMs en {{ server.name }}</h2>
+        {% if error %}
+            <div style="color:red;">{{ error }}</div>
+        {% endif %}
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Estado</th>
+                <th>Nodo</th>
+            </tr>
+            {% for vm in vms %}
+            <tr>
+                <td>{{ vm['vmid'] }}</td>
+                <td>{{ vm['name'] }}</td>
+                <td>{{ vm['status'] }}</td>
+                <td>{{ vm['node'] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>

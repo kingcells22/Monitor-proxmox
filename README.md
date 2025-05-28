@@ -1,4 +1,4 @@
-# Monitor-proxmox
+# Monitor-Proxmox 🖥️ Monitor
 
 ---
 
@@ -67,3 +67,28 @@ Sigue estos pasos para instalar y ejecutar el script en tu servidor Proxmox:
 ### Ejemplo de Salida
 
 Cuando ejecutes el script, verás una salida similar a esta:
+
+[+] Mostrando estado de VMs y CTs en Proxmox:
+
+100 (tu_vm_o_ct_1) Estado: ON
+101 (tu_vm_o_ct_2) Estado: OFF
+102 (tu_vm_o_ct_3) Estado: ON
+
+
+---
+
+## Cómo Contribuir
+
+¡Las contribuciones son bienvenidas! Si tienes ideas para mejorar este script, puedes:
+
+1.  Hacer un `fork` del repositorio.
+2.  Crear una nueva rama (`git checkout -b feature/nueva-funcionalidad`).
+3.  Realizar tus cambios y hacer `commit` (`git commit -m 'Añade nueva funcionalidad'`).
+4.  Subir tus cambios (`git push origin feature/nueva-funcionalidad`).
+5.  Abrir un `Pull Request`.
+
+---
+
+## Licencia
+
+Este proyecto está bajo la licencia [MIT](https://opensource.org/licenses/MIT). Consulta el archivo `LICENSE` para más detalles.

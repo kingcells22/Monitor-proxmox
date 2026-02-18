@@ -6,29 +6,30 @@
 
 `Monitor-proxmox` es un script simple diseñado para monitorear el estado de tus máquinas virtuales (VMs) y contenedores (CTs) en un entorno Proxmox VE. Proporciona una visión rápida sobre qué VMs/CTs están encendidas y cuáles están apagadas, ayudándote a mantener un control básico de tu infraestructura virtualizada.
 
-Este script es ideal para administradores que necesitan una herramienta ligera para verificar el estado operativo de sus instancias de Proxmox sin necesidad de acceder a la interfaz web completa o usar comandos más complejos.
+A diferencia de un script simple, este monitor se ejecuta como un servicio continuo que:
+1.  Provee una **Interfaz Web** para visualizar el estado de múltiples nodos.
+2.  Envía **Alertas a Telegram** en tiempo real cuando una VM o Nodo cambia de estado (se apaga/enciende) o si hay errores de conexión.
 
 ---
 
 ## Características
 
-* **Listado de VMs/CTs:** Muestra un listado claro de todas las VMs y CTs configuradas en tu Proxmox.
-* **Estado Operativo:** Indica si cada VM/CT está **encendida** o **apagada**.
-* **Salida Sencilla:** Presenta la información en un formato fácil de leer en la terminal.
-
+* **Soporte Multi-Servidor:** Monitorea múltiples instancias de Proxmox desde un solo lugar.
+* **Interfaz Web (FastAPI):** Panel accesible vía navegador para ver el estado de todos tus recursos.
+* **Alertas de Telegram:** Notificaciones automáticas de caídas o cambios de estado.
+* **Dockerizado:** Fácil de desplegar y aislar mediante contenedores Docker.
+* **Auto-reinicio:** Configurado para arrancar automáticamente si el servidor se reinicia.
 ---
 
 ## Requisitos
 
-Para utilizar este script, necesitarás:
-
-* Un servidor **Proxmox VE** en funcionamiento.
-* Acceso **SSH** al servidor Proxmox.
-* **Bash** (generalmente ya disponible en Proxmox).
+* Servidor Linux (Debian/Ubuntu/CentOS).
+* **Docker** instalado.
+* Git.
 
 ---
 
-## Instalación y Uso
+## Instalación y Despliegue con Docker
 
 Sigue estos pasos para instalar y ejecutar el script en tu servidor Proxmox:
 
@@ -39,12 +40,13 @@ Sigue estos pasos para instalar y ejecutar el script en tu servidor Proxmox:
     ```
 
 2.  **Clona el repositorio:**
+    Descarga el código en tu servidor:
     Navega al directorio donde quieras guardar el script (por ejemplo, tu directorio `root` o `/opt/scripts`).
 
     ```bash
-    cd ~
-    git clone [https://github.com/kingcells22/Monitor-proxmox.git](https://github.com/kingcells22/Monitor-proxmox.git)
-    ```
+cd ~
+git clone [https://github.com/kingcells22/Monitor-proxmox.git](https://github.com/kingcells22/Monitor-proxmox.git)
+cd Monitor-proxmox
 
 3.  **Navega al directorio del script:**
 
@@ -52,30 +54,65 @@ Sigue estos pasos para instalar y ejecutar el script en tu servidor Proxmox:
     cd Monitor-proxmox
     ```
 
-4.  **Haz el script ejecutable:**
+4.  Configuración
+    Edita el archivo monitor.py para agregar tus servidores Proxmox y credenciales de Telegram.
+    ```bash
+    nano monitor.py
+    ```
+    NOTA: Asegúrate de configurar la lista PROXMOX_SERVERS, el TELEGRAM_BOT_TOKEN y el TELEGRAM_CHAT_ID.
+5.  **Construir la Imagen (Build)**
+    Crea la imagen de Docker con tus configuraciones actuales:
 
     ```bash
-    chmod +x monitor_proxmox.sh
+    docker build -t monitor-proxmox .
     ```
 
-5.  **Ejecuta el script:**
+6.  **Ejecutar el Contenedor (Run)**
+    Levanta el contenedor en segundo plano (puerto 8000):
 
+     ```bash
+    docker run -d \
+  --name monitor-proxmox \
+  --restart unless-stopped \
+  -p 8000:8000 \
+  monitor-proxmox
+    ```
+
+**Gestión del Contenedor**
+Aquí están los comandos esenciales para administrar el monitor:
+
+Ver si el contenedor está corriendo
+Usa este comando para ver el estado (STATUS) y el ID del contenedor:
+
+ ```bash
+    docker ps
+ ```
+
+(Nota: No uses docker compose ps, ya que este despliegue es standalone).
+    ---
+**Ver los logs (errores o actividad)**
+Si necesitas depurar o ver qué está haciendo el monitor:
+    docker logs -f monitor-proxmox
+**(Presiona Ctrl + C para salir de los logs).**
+
+**Detener y Eliminar el monitor**
+Si necesitas bajar el servicio para actualizar el código o configuración:
+
+1. Detener:
     ```bash
-    ./monitor_proxmox.sh
+    docker stop monitor-proxmox
     ```
+------
 
-### Ejemplo de Salida
+3. Eliminar:
+    ```bash
+    docker rm monitor-proxmox
+    ```
+------    
 
-Cuando ejecutes el script, verás una salida similar a esta:
-
-[+] Mostrando estado de VMs y CTs en Proxmox:
-
-100 (tu_vm_o_ct_1) Estado: ON
-101 (tu_vm_o_ct_2) Estado: OFF
-102 (tu_vm_o_ct_3) Estado: ON
-
-
----
+5. Acceso al Panel Web
+Una vez que el contenedor esté corriendo, abre tu navegador y accede a:
+http://TU_IP_DEL_SERVIDOR:8000
 
 ## Cómo Contribuir
 

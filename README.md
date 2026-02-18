@@ -46,6 +46,7 @@ Sigue estos pasos para instalar y ejecutar el script en tu servidor Proxmox:
     ```bash
 cd ~
 git clone [https://github.com/kingcells22/Monitor-proxmox.git](https://github.com/kingcells22/Monitor-proxmox.git)
+    ```
 cd Monitor-proxmox
 
 3.  **Navega al directorio del script:**

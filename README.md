@@ -73,10 +73,10 @@ Sigue estos pasos para instalar y ejecutar el script en tu servidor Proxmox:
 
      ```bash
     docker run -d \
-  --name monitor-proxmox \
-  --restart unless-stopped \
-  -p 8000:8000 \
-  monitor-proxmox
+      --name monitor-proxmox \
+      --restart unless-stopped \
+      -p 8000:8000 \
+      monitor-proxmox
     ```
 
 **Gestión del Contenedor**

@@ -1,4 +1,11 @@
 fastapi
 uvicorn
-proxmoxer[https]
 python-dotenv
+apscheduler
+requests
+pydantic
+sqlalchemy
+jinja2
+python-multipart
+aiofiles
+proxmoxer

@@ -1,17 +1,21 @@
-# Usa una imagen base de Python
-FROM python:3.9-slim-buster
+# Usa una imagen oficial de Python
+FROM python:3.12-slim
 
-# Establece el directorio de trabajo dentro del contenedor
+# Establece el directorio de trabajo
 WORKDIR /app
 
-# Copia el archivo de requerimientos al contenedor
-COPY requirements.txt .
+# Copia solo los archivos de dependencias primero
+COPY requirements.txt ./
 
 # Instala las dependencias
-RUN pip install -r requirements.txt
+RUN pip install --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
 
-# Copia el resto del código fuente al contenedor
+# Ahora copia el resto del código
 COPY . .
 
-# Define el comando para ejecutar la aplicación
-CMD ["python", "monitor.py"]
+# Expone el puerto de la API
+EXPOSE 8000
+
+# Comando para iniciar la API
+CMD ["uvicorn", "monitor:app", "--host", "0.0.0.0", "--port", "8000"]

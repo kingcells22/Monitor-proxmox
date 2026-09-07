@@ -11,18 +11,18 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from auth import get_current_user, login_get, login_post, SESSION_COOKIE
 from contextlib import asynccontextmanager
 
-# Configuración de logging
+# Configuracion de logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger("proxmox-monitor")
 
-# --- CONFIGURACIÓN DE TELEGRAM ---
+# --- CONFIGURACION DE TELEGRAM ---
 TELEGRAM_BOT_TOKEN = "7930279041:AAG3eTyWwxJg6Zwj5euX0VR8cepB9P3ug9A"
-TELEGRAM_CHAT_ID = str(1292808439)  # Puede ser int o str
+TELEGRAM_CHAT_ID = str(1292808439)
 
-# --- CONFIGURACIÓN DE SERVIDORES PROXMOX ---
+# --- CONFIGURACION DE SERVIDORES PROXMOX ---
 PROXMOX_SERVERS = [
     {
         "name": "csiceprod",
@@ -73,9 +73,6 @@ def get_server_config(server_name: str) -> Optional[Dict[str, Any]]:
     return None
 
 def get_proxmox(server_name: str) -> ProxmoxAPI:
-    """
-    Devuelve una instancia de ProxmoxAPI para el servidor especificado.
-    """
     config = get_server_config(server_name)
     if not config:
         raise HTTPException(status_code=404, detail=f"Servidor '{server_name}' no encontrado")
@@ -93,17 +90,11 @@ def get_proxmox(server_name: str) -> ProxmoxAPI:
         logger.error(f"Error conectando a Proxmox {server_name}: {e}")
         raise HTTPException(status_code=500, detail=f"Error conectando a Proxmox {server_name}: {e}")
 
-
 # --- Scheduler de alertas ---
 previous_status = {}
 
 def send_telegram_alert(message: str):
-    """
-    Envia alertas a Telegram usando la API oficial.
-    Maneja errores y loguea la respuesta. Si el mensaje es muy largo,
-    lo divide en multiples partes para evitar el Error 400 de Telegram.
-    """
-    logger.info(f"ALERTA TELEGRAM: Preparando envio...")
+    logger.info("ALERTA TELEGRAM: Preparando envio...")
     token = TELEGRAM_BOT_TOKEN
     chat_id = TELEGRAM_CHAT_ID
     if not token or not chat_id:
@@ -111,30 +102,23 @@ def send_telegram_alert(message: str):
         return
         
     url = f"https://api.telegram.org/bot{token}/sendMessage"
-    
-    # Limite seguro por mensaje (Telegram soporta hasta 4096)
     MAX_LENGTH = 4000
     mensajes_a_enviar = []
 
-    # Logica para dividir el texto sin romper oraciones
     if len(message) <= MAX_LENGTH:
         mensajes_a_enviar.append(message)
     else:
         lineas = message.split('\n')
         mensaje_actual = ""
         for linea in lineas:
-            # Si agregar esta linea supera el limite, guardamos el bloque actual e iniciamos uno nuevo
             if len(mensaje_actual) + len(linea) + 1 > MAX_LENGTH:
                 mensajes_a_enviar.append(mensaje_actual)
                 mensaje_actual = linea + "\n"
             else:
                 mensaje_actual += linea + "\n"
-        
-        # Guardamos el remanente si quedo algo en el buffer
         if mensaje_actual:
             mensajes_a_enviar.append(mensaje_actual)
 
-    # Enviar cada bloque generado
     for i, texto in enumerate(mensajes_a_enviar):
         payload = {
             "chat_id": chat_id,
@@ -145,16 +129,13 @@ def send_telegram_alert(message: str):
             resp = requests.post(url, data=payload, timeout=10)
             resp.raise_for_status()
             logger.info(f"Mensaje (Parte {i+1}/{len(mensajes_a_enviar)}) enviado a Telegram exitosamente.")
-            
-            # Pausa de 1 segundo para no hacer spam muy rapido a la API de Telegram
             if len(mensajes_a_enviar) > 1:
                 time.sleep(1) 
         except Exception as e:
             logger.error(f"Error enviando mensaje a Telegram (Parte {i+1}): {e}")
 
 def daily_report():
-    """Genera y envía un reporte diario del estado de todos los servidores Proxmox."""
-    report = "📝 *Reporte Diario Proxmox*\n"
+    report = "[REPORTE] *Reporte Diario Proxmox*\n"
     for server in PROXMOX_SERVERS:
         try:
             proxmox = get_proxmox(server["name"])
@@ -168,62 +149,80 @@ def daily_report():
             for vm in vms:
                 report += f"  - VM: {vm['name']} (ID: {vm['vmid']}) | Estado: {vm['status']}\n"
         except Exception as e:
-            report += f"⚠️ Error obteniendo datos de {server['name']}: {e}\n"
+            report += f"[ERROR] Error obteniendo datos de {server['name']}: {e}\n"
     send_telegram_alert(report)
 
-
 def monitor_events():
-    """Monitorea cambios de estado en nodos y VMs y envía alertas cuando ocurren."""
     global previous_status
     for server in PROXMOX_SERVERS:
+        conn_key = f"conn_status_{server['name']}"
+        
         try:
             proxmox = get_proxmox(server["name"])
             nodes = get_all_nodes(proxmox)
             vms = get_all_vms(proxmox)
+            
+            # --- LOGICA DE RECUPERACION DE RED ---
+            if previous_status.get(conn_key) == "down":
+                msg_recovery = f"[OK] *Conexion Restablecida*\nEl servidor `{server['name']}` vuelve a estar en linea y respondiendo."
+                send_telegram_alert(msg_recovery)
+            
+            previous_status[conn_key] = "up"
+            # -------------------------------------
+
             for node in nodes:
                 node_id = f"{server['name']}-{node['node']}"
                 status = node.get("status")
                 prev = previous_status.get(node_id)
                 logging.info(f"NODE {node_id}: estado anterior={prev}, estado actual={status}")
                 if prev and prev != status:
-                    msg = f"🚨 *ALERTA*: Nodo `{node['node']}` en `{server['name']}` cambió de estado: `{prev}` → `{status}`"
+                    msg = f"[ALERTA]: Nodo `{node['node']}` en `{server['name']}` cambio de estado: `{prev}` -> `{status}`"
                     send_telegram_alert(msg)
                 previous_status[node_id] = status
+                
             for vm in vms:
                 vm_id = f"{server['name']}-{vm['node']}-{vm['vmid']}"
                 status = vm.get("status")
                 prev = previous_status.get(vm_id)
                 logging.info(f"VM {vm_id}: estado anterior={prev}, estado actual={status}")
                 if prev and prev != status:
-                    msg = f"🚨 *ALERTA*: VM `{vm['name']}` (ID: {vm['vmid']}) en `{server['name']}` cambió de estado: `{prev}` → `{status}`"
+                    msg = f"[ALERTA]: VM `{vm['name']}` (ID: {vm['vmid']}) en `{server['name']}` cambio de estado: `{prev}` -> `{status}`"
                     send_telegram_alert(msg)
                 previous_status[vm_id] = status
+
         except Exception as e:
-            logging.error(f"Error monitoreando {server['name']}: {e}")
-            send_telegram_alert(f"⚠️ Error monitoreando {server['name']}: {e}")
+            error_str = str(e)
+            logging.error(f"Error monitoreando {server['name']}: {error_str}")
+            
+            # --- LOGICA DE MENSAJE AMIGABLE Y ANTI-SPAM ---
+            if previous_status.get(conn_key) != "down":
+                if "No route to host" in error_str or "Max retries exceeded" in error_str or "timeout" in error_str.lower():
+                    friendly_error = "Servidor inalcanzable (Falla de red, sin internet o equipo apagado)."
+                elif "401" in error_str or "auth" in error_str.lower():
+                    friendly_error = "Error de autenticacion (Credenciales invalidas o ticket expirado)."
+                else:
+                    friendly_error = "Error interno de conexion."
 
-# SUGERENCIA: Si quieres persistir el estado entre reinicios, puedes guardar previous_status en un archivo JSON al final de cada ciclo,
-# y cargarlo al inicio del script.
+                msg_falla = f"[ALERTA DE CONEXION]\nNo se puede contactar al servidor `{server['name']}`.\n*Causa*: {friendly_error}"
+                send_telegram_alert(msg_falla)
+                
+                previous_status[conn_key] = "down"
+            # ----------------------------------------------
 
-
-# Inicializar el scheduler (pero no arrancarlo aún)
 scheduler = BackgroundScheduler()
 
-# --- FastAPI lifespan event (reemplazo de @app.on_event("startup")) ---
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Arranca el scheduler y programa los jobs
     try:
         scheduler.add_job(daily_report, "cron", hour=0, minute=0)
         scheduler.add_job(monitor_events, "interval", minutes=2)
         scheduler.start()
-        logger.info("Scheduler de alertas iniciado correctamente (lifespan)")
+        logger.info("Scheduler de alertas iniciado correctamente")
     except Exception as e:
         logger.error(f"Error iniciando el scheduler: {e}")
     yield
-    # Al salir, apaga el scheduler
     scheduler.shutdown()
-    logger.info("Scheduler detenido correctamente (lifespan)")
+    logger.info("Scheduler detenido correctamente")
 
 app = FastAPI(title="Monitor Proxmox Multi-Servidor", lifespan=lifespan)
 
@@ -231,11 +230,10 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 def get_all_nodes(proxmox: ProxmoxAPI) -> List[Dict[str, Any]]:
-    """Obtiene todos los nodos del clúster."""
     try:
         nodes = cast(List[Dict[str, Any]], proxmox.nodes.get())  # type: ignore
         if not isinstance(nodes, list):
-            logger.warning("La respuesta de proxmox.nodes.get() no es una lista, retornando lista vacía.")
+            logger.warning("La respuesta no es una lista, retornando vacio.")
             nodes = []
         return nodes
     except Exception as e:
@@ -243,7 +241,6 @@ def get_all_nodes(proxmox: ProxmoxAPI) -> List[Dict[str, Any]]:
         raise HTTPException(status_code=500, detail=f"Error obteniendo nodos: {e}")
 
 def get_all_vms(proxmox: ProxmoxAPI) -> List[Dict[str, Any]]:
-    """Obtiene todas las VMs de todos los nodos."""
     vms_list: List[Dict[str, Any]] = []
     nodes = get_all_nodes(proxmox)
     for node in nodes:
@@ -251,7 +248,7 @@ def get_all_vms(proxmox: ProxmoxAPI) -> List[Dict[str, Any]]:
         try:
             vms = cast(List[Dict[str, Any]], proxmox.nodes(node_name).qemu.get())  # type: ignore
             if not isinstance(vms, list):
-                logger.warning(f"La respuesta de proxmox.nodes({node_name}).qemu.get() no es una lista, se ignora.")
+                logger.warning(f"La respuesta de qemu.get() no es lista, se ignora.")
                 vms = []
             for vm in vms:
                 vms_list.append({
@@ -293,7 +290,6 @@ async def servers_list(request: Request):
     user = get_current_user(request)
     if not user:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
-    # Solo mostramos la lista de servidores
     servers = [{"name": s["name"]} for s in PROXMOX_SERVERS]
     return templates.TemplateResponse("servers.html", {
         "request": request,
@@ -326,7 +322,7 @@ async def server_vms(request: Request, server_name: str):
             "user": user
         })
     except Exception as e:
-        logger.error(f"Error generando vista de VMs para {server_name}: {e}")
+        logger.error(f"Error generando vista para {server_name}: {e}")
         return templates.TemplateResponse("server_vms.html", {
             "request": request,
             "server": config,

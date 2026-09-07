@@ -1,7 +1,41 @@
+# Python cache files
 __pycache__/
-.pyc
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
 venv/
+env/
+ENV/
+.env
+
+# Logs and databases
 *.log
+*.sqlite3
+*.db
+
+# Version control
 .git/
 .gitignore
+
+# IDE specific files
+.idea/
 .vscode/
+*.swp
+*.swo
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/

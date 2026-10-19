@@ -41,6 +41,14 @@ PROXMOX_SERVERS = [
         "verify_ssl": False
     },
     {
+        "name": "aliados",
+        "host": "171.0.0.6",
+        "port": 8006,
+        "user": "root@pam",
+        "password": "FiiVzla2024.",
+        "verify_ssl": False
+    },
+    {
         "name": "master",
         "host": "172.16.0.2",
         "port": 8006,
@@ -83,7 +91,8 @@ def get_proxmox(server_name: str) -> ProxmoxAPI:
             user=config["user"],
             password=config["password"],
             verify_ssl=config["verify_ssl"],
-            port=config["port"]
+            port=config["port"],
+            timeout=15
         )
         return proxmox
     except Exception as e:

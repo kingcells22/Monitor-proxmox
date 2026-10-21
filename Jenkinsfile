@@ -13,7 +13,7 @@ pipeline {
                 script {
                     env.GIT_AUTOR   = sh(script: "git log -1 --pretty=format:'%ae'", returnStdout: true).trim()
                     env.GIT_MENSAJE = sh(script: "git log -1 --pretty=format:'%s'", returnStdout: true).trim()
-                    env.GIT_COMMIT  = sh(script: "git log -1 --pretty=format:'%h'", returnStdout: true).trim()
+                    env.GIT_COMMIT = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
                     env.GIT_RAMA    = env.BRANCH_NAME ?: 'origin/pruebas'
 
                     // Guardamos el mensaje en el entorno de Jenkins para evitar choques de sintaxis

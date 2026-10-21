@@ -13,7 +13,8 @@ pipeline {
                 script {
                     env.GIT_AUTOR   = sh(script: "git log -1 --pretty=format:'%ae'", returnStdout: true).trim()
                     env.GIT_MENSAJE = sh(script: "git log -1 --pretty=format:'%s'", returnStdout: true).trim()
-                    env.GIT_COMMIT = sh(script: "git rev-parse HEAD | cut -c1-7", returnStdout: true).trim()
+                    // Usamos una variable con nombre personalizado para evitar el bloqueo de Jenkins
+                    env.COMMIT_CORTO = sh(script: "git rev-parse HEAD | cut -c1-7", returnStdout: true).trim()
                     env.GIT_RAMA    = env.BRANCH_NAME ?: 'origin/pruebas'
 
                     // Guardamos el mensaje en el entorno de Jenkins para evitar choques de sintaxis
@@ -22,7 +23,7 @@ Rama(Version): origin/${env.GIT_RAMA}
 Sistema: ${env.NOMBRE_SISTEMA}
 Último mensaje: ${env.GIT_MENSAJE}
 Autor: ${env.GIT_AUTOR}
-Commit: ${env.GIT_COMMIT}
+Commit: ${env.COMMIT_CORTO}
 ${env.NOMBRE_SISTEMA} está desplegando..."""
 
                     // Usamos comillas simples (''') para que Linux maneje las variables de forma segura

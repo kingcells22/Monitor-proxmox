@@ -14,7 +14,7 @@ pipeline {
                     env.GIT_AUTOR   = sh(script: "git log -1 --pretty=format:'%ae'", returnStdout: true).trim()
                     env.GIT_MENSAJE = sh(script: "git log -1 --pretty=format:'%s'", returnStdout: true).trim()
                     env.GIT_COMMIT  = sh(script: "git log -1 --pretty=format:'%h'", returnStdout: true).trim()
-                    env.GIT_RAMA    = env.BRANCH_NAME ?: 'origin/main'
+                    env.GIT_RAMA    = env.BRANCH_NAME ?: 'origin/pruebas'
 
                     def mensajeInicio = """----------------------------------------
 Rama(Version): origin/${env.GIT_RAMA}
@@ -33,12 +33,23 @@ ${env.NOMBRE_SISTEMA} está desplegando..."""
             }
         }
 
-        stage('Ejecutar Acciones / Despliegue') {
+        stage('Despliegue Automático por SSH') {
             steps {
-                sh '''
-                    echo "Clonado exitoso. Ejecutando acciones del sistema..."
-                    python3 --version
-                '''
+                // Llama a la credencial SSH que acabas de crear en Jenkins
+                sshagent(['credencial-ssh-vms']) {
+                    sh '''
+                        # Se conecta a la VM y ejecuta la rutina de actualización y Docker
+                        ssh -o StrictHostKeyChecking=no -p 19056 root@171.0.20.5 "
+                            cd /home/cop/Monitor-proxmox &&
+                            git pull origin pruebas &&
+                            docker stop monitor-proxmox || true &&
+                            docker rm monitor-proxmox || true &&
+                            docker build -t monitor-proxmox . &&
+                            docker run -d --name monitor-proxmox -p 8000:8000 monitor-proxmox &&
+                            docker ps
+                        "
+                    '''
+                }
             }
         }
     }

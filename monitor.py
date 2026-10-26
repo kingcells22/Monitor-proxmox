@@ -143,6 +143,61 @@ def send_telegram_alert(message: str):
         except Exception as e:
             logger.error(f"Error enviando mensaje a Telegram (Parte {i+1}): {e}")
 
+            # =====================================================================
+# --- NUEVA FUNCIONALIDAD: PROCESAR COMANDOS DEL MENÚ DE TELEGRAM ---
+# =====================================================================
+def poll_telegram_commands():
+    """Lee silenciosamente si apretaste algún botón en Telegram"""
+    global last_telegram_update_id
+    token = TELEGRAM_BOT_TOKEN
+    url = f"https://api.telegram.org/bot{token}/getUpdates"
+    params = {"timeout": 3}
+    if last_telegram_update_id:
+        params["offset"] = last_telegram_update_id + 1
+
+    try:
+        resp = requests.get(url, params=params, timeout=5)
+        if resp.status_code != 200:
+            return
+            
+        for update in resp.json().get("result", []):
+            last_telegram_update_id = update["update_id"]
+            message = update.get("message", {})
+            text = message.get("text", "").strip()
+            chat_id = str(message.get("chat", {}).get("id"))
+
+            # Solo responde a tu Chat ID por seguridad
+            if chat_id == TELEGRAM_CHAT_ID:
+                if text == "/listar":
+                    msg = "🖥️ *Nodos Proxmox Integrados:*\n"
+                    for s in PROXMOX_SERVERS:
+                        msg += f"• `{s['name']}` (Comando: `/status_{s['name']}`)\n"
+                    send_telegram_alert(msg)
+                    
+                elif text.startswith("/status_"):
+                    target = text.replace("/status_", "").strip()
+                    if not get_server_config(target):
+                        send_telegram_alert(f"⚠️ El servidor `{target}` no existe en la configuración.")
+                        continue
+                    
+                    send_telegram_alert(f"⏳ Consultando estado actual de `{target}`...")
+                    try:
+                        px = get_proxmox(target)
+                        nodes = get_all_nodes(px)
+                        vms = get_all_vms(px)
+                        
+                        summary = f"📊 *Reporte instantáneo de {target.upper()}*\n\n*Nodos:*\n"
+                        for n in nodes: 
+                            summary += f"- `{n['node']}`: {n['status']}\n"
+                        
+                        running = sum(1 for v in vms if v['status'] == 'running')
+                        summary += f"\n*VMs Totales ({len(vms)}):*\n🟢 Encendidas: {running}\n🔴 Apagadas: {len(vms) - running}"
+                        send_telegram_alert(summary)
+                    except Exception as e:
+                        send_telegram_alert(f"❌ Error al consultar `{target}`. Asegúrate de que está encendido y tiene red.")
+    except Exception:
+        pass # Ignoramos errores de red momentáneos para no hacer spam en los logs
+
 def daily_report():
     report = "[REPORTE] *Reporte Diario Proxmox*\n"
     for server in PROXMOX_SERVERS:
@@ -225,6 +280,10 @@ async def lifespan(app: FastAPI):
     try:
         scheduler.add_job(daily_report, "cron", hour=0, minute=0)
         scheduler.add_job(monitor_events, "interval", minutes=2)
+
+        # AQUI AGREGAMOS LA NUEVA TAREA PARA LEER TUS BOTONES DE TELEGRAM:
+        scheduler.add_job(poll_telegram_commands, "interval", seconds=3)
+
         scheduler.start()
         logger.info("Scheduler de alertas iniciado correctamente")
     except Exception as e:

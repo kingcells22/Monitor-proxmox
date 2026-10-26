@@ -101,6 +101,7 @@ def get_proxmox(server_name: str) -> ProxmoxAPI:
 
 # --- Scheduler de alertas ---
 previous_status = {}
+last_telegram_update_id = None  # <--- ESTA ES LA LÍNEA QUE TE FALTA AÑADIR
 
 def send_telegram_alert(message: str):
     logger.info("ALERTA TELEGRAM: Preparando envio...")

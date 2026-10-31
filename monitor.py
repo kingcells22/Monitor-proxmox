@@ -10,6 +10,10 @@ from proxmoxer import ProxmoxAPI
 from apscheduler.schedulers.background import BackgroundScheduler
 from auth import get_current_user, login_get, login_post, SESSION_COOKIE
 from contextlib import asynccontextmanager
+from dotenv import load_dotenv
+
+# Cargar credenciales desde el archivo .env oculto
+load_dotenv()
 
 # Configuracion de logging
 logging.basicConfig(
@@ -19,60 +23,60 @@ logging.basicConfig(
 logger = logging.getLogger("proxmox-monitor")
 
 # --- CONFIGURACION DE TELEGRAM ---
-TELEGRAM_BOT_TOKEN = "7930279041:AAFYGcAOmWT6fZZnmdNqKENHgMFKGlCCHow"
-TELEGRAM_CHAT_ID = str(1292808439)
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 # --- CONFIGURACION DE SERVIDORES PROXMOX ---
-PROXMOX_SERVERS = [
-    {
-        "name": "csiceprod",
-        "host": "10.0.0.20",
-        "port": 8006,
-        "user": "root@pam",
-        "password": "FloriAng3r4*0.85",
-        "verify_ssl": False
-    },
-    {
-        "name": "dmz",
-        "host": "171.0.10.5",
-        "port": 8006,
-        "user": "root@pam",
-        "password": "FiiVzla2024.",
-        "verify_ssl": False
-    },
-    {
-        "name": "aliados",
-        "host": "171.0.0.6",
-        "port": 8006,
-        "user": "root@pam",
-        "password": "FiiVzla2024.",
-        "verify_ssl": False
-    },
-    {
-        "name": "master",
-        "host": "172.16.0.2",
-        "port": 8006,
-        "user": "root@pam",
-        "password": "FiiVzla2024.",
-        "verify_ssl": False
-    },
-    {
-        "name": "pruebaotic",
-        "host": "172.31.45.91",
-        "port": 8006,
-        "user": "root@pam",
-        "password": "123456789",
-        "verify_ssl": False
-    },
-    {
-        "name": "gestion",
-        "host": "172.31.100.31",
-        "port": 8006,
-        "user": "root@pam",
-        "password": "FiiVzla2024.",
-        "verify_ssl": False
-    },
-]
+    PROXMOX_SERVERS = [
+        {
+            "name": "csiceprod",
+            "host": os.getenv("CSICEPROD_HOST"),
+            "port": int(os.getenv("CSICEPROD_PORT")),
+            "user": os.getenv("CSICEPROD_USER"),
+            "password": os.getenv("CSICEPROD_PASS"),
+            "verify_ssl": False
+        },
+        {
+            "name": "dmz",
+            "host": os.getenv("DMZ_HOST"),
+            "port": int(os.getenv("DMZ_PORT")),
+            "user": os.getenv("DMZ_USER"),
+            "password": os.getenv("DMZ_PASS"),
+            "verify_ssl": False
+        },
+        {
+            "name": "aliados",
+            "host": os.getenv("ALIADOS_HOST"),
+            "port": int(os.getenv("ALIADOS_PORT")),
+            "user": os.getenv("ALIADOS_USER"),
+            "password": os.getenv("ALIADOS_PASS"),
+            "verify_ssl": False
+        },
+        {
+            "name": "master",
+            "host": os.getenv("MASTER_HOST"),
+            "port": int(os.getenv("MASTER_PORT")),
+            "user": os.getenv("MASTER_USER"),
+            "password": os.getenv("MASTER_PASS"),
+            "verify_ssl": False
+        },
+        {
+            "name": "pruebaotic",
+            "host": os.getenv("PRUEBAOTIC_HOST"),
+            "port": int(os.getenv("PRUEBAOTIC_PORT")),
+            "user": os.getenv("PRUEBAOTIC_USER"),
+            "password": os.getenv("PRUEBAOTIC_PASS"),
+            "verify_ssl": False
+        },
+        {
+            "name": "gestion",
+            "host": os.getenv("GESTION_HOST"),
+            "port": int(os.getenv("GESTION_PORT")),
+            "user": os.getenv("GESTION_USER"),
+            "password": os.getenv("GESTION_PASS"),
+            "verify_ssl": False
+        },
+    ]
 
 def get_server_config(server_name: str) -> Optional[Dict[str, Any]]:
     for server in PROXMOX_SERVERS:

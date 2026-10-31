@@ -170,27 +170,39 @@ def poll_telegram_commands():
 # Solo responde a tu Chat ID por seguridad
             if chat_id == TELEGRAM_CHAT_ID:
                 if text == "/listar":
-                    msg = "🖥️ *Nodos Proxmox Integrados:*\n\n"
+                    msg = "🖥️ *Estado General de Nodos Proxmox:*\n\n"
                     for s in PROXMOX_SERVERS:
-                        msg += f"🔹 *{s['name'].upper()}* ➡️ /status_\\_{s['name']}\n"
-                    send_telegram_alert(msg)
+                        # Leer el estado de la memoria de tu monitor de fondo
+                        estado_red = previous_status.get(f"conn_status_{s['name']}")
+                        
+                        if estado_red == "up":
+                            status_visual = "🟢 ONLINE"
+                        elif estado_red == "down":
+                            status_visual = "🔴 OFFLINE"
+                        else:
+                            status_visual = "🟡 Esperando lectura..."
+                            
+                        msg += f"🔹 *{s['name'].upper()}* ➡️ {status_visual}\n"
                     
+                    msg += "\n_💡 Usa el botón Menú para ver el detalle de VMs de un nodo._"
+                    send_telegram_alert(msg)
+
                 elif text.startswith("/status_"):
                     target = text.replace("/status_", "").strip()
                     if not get_server_config(target):
                         send_telegram_alert(f"⚠️ El servidor `{target}` no existe en la configuración.")
                         continue
-                    
+
                     send_telegram_alert(f"⏳ Consultando estado actual de `{target}`...")
                     try:
                         px = get_proxmox(target)
                         nodes = get_all_nodes(px)
                         vms = get_all_vms(px)
-                        
+
                         summary = f"📊 *Reporte instantáneo de {target.upper()}*\n\n*Nodos:*\n"
-                        for n in nodes: 
+                        for n in nodes:
                             summary += f"- `{n['node']}`: {n['status']}\n"
-                        
+
                         running = sum(1 for v in vms if v['status'] == 'running')
                         summary += f"\n*VMs Totales ({len(vms)}):*\n🟢 Encendidas: {running}\n🔴 Apagadas: {len(vms) - running}"
                         send_telegram_alert(summary)

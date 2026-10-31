@@ -172,7 +172,7 @@ def poll_telegram_commands():
                 if text == "/listar":
                     msg = "🖥️ *Nodos Proxmox Integrados:*\n\n"
                     for s in PROXMOX_SERVERS:
-                        msg += f"🔹 *{s['name'].upper()}* ➡️ /status_{s['name']}\n"
+                        msg += f"🔹 *{s['name'].upper()}* ➡️ /status_\\_{s['name']}\n"
                     send_telegram_alert(msg)
                     
                 elif text.startswith("/status_"):

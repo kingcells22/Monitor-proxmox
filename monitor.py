@@ -167,13 +167,13 @@ def poll_telegram_commands():
             text = message.get("text", "").strip()
             chat_id = str(message.get("chat", {}).get("id"))
 
-            # Solo responde a tu Chat ID por seguridad
+# Solo responde a tu Chat ID por seguridad
             if chat_id == TELEGRAM_CHAT_ID:
                 if text == "/listar":
-                    msg = "🖥️ *Nodos Proxmox Integrados:*\n"
+                    msg = "🖥️ *Nodos Proxmox Integrados:*\n\n"
                     for s in PROXMOX_SERVERS:
-			msg += f"🔹 *{s['name'].upper()}* ➡️ /status_{s['name']}\n""
-                   send_telegram_alert(msg)
+                        msg += f"🔹 *{s['name'].upper()}* ➡️ /status_{s['name']}\n"
+                    send_telegram_alert(msg)
                     
                 elif text.startswith("/status_"):
                     target = text.replace("/status_", "").strip()

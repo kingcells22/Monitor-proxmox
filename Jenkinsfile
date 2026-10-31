@@ -46,7 +46,7 @@ ${env.NOMBRE_SISTEMA} está desplegando..."""
                             docker stop monitor-proxmox || true &&
                             docker rm monitor-proxmox || true &&
                             docker build -t monitor-proxmox . &&
-                            docker run -d --name monitor-proxmox -p 8000:8000 monitor-proxmox &&
+                            docker run -d --name monitor-proxmox --env-file .env -p 8000:8000 monitor-proxmox &&
                             docker ps
                         "
                     '''

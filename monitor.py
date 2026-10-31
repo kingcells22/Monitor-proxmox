@@ -28,55 +28,55 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 # --- CONFIGURACION DE SERVIDORES PROXMOX ---
 PROXMOX_SERVERS = [
-        {
-            "name": "csiceprod",
-            "host": os.getenv("CSICEPROD_HOST"),
-            "port": int(os.getenv("CSICEPROD_PORT")),
-            "user": os.getenv("CSICEPROD_USER"),
-            "password": os.getenv("CSICEPROD_PASS"),
-            "verify_ssl": False
-        },
-        {
-            "name": "dmz",
-            "host": os.getenv("DMZ_HOST"),
-            "port": int(os.getenv("DMZ_PORT")),
-            "user": os.getenv("DMZ_USER"),
-            "password": os.getenv("DMZ_PASS"),
-            "verify_ssl": False
-        },
-        {
-            "name": "aliados",
-            "host": os.getenv("ALIADOS_HOST"),
-            "port": int(os.getenv("ALIADOS_PORT")),
-            "user": os.getenv("ALIADOS_USER"),
-            "password": os.getenv("ALIADOS_PASS"),
-            "verify_ssl": False
-        },
-        {
-            "name": "master",
-            "host": os.getenv("MASTER_HOST"),
-            "port": int(os.getenv("MASTER_PORT")),
-            "user": os.getenv("MASTER_USER"),
-            "password": os.getenv("MASTER_PASS"),
-            "verify_ssl": False
-        },
-        {
-            "name": "pruebaotic",
-            "host": os.getenv("PRUEBAOTIC_HOST"),
-            "port": int(os.getenv("PRUEBAOTIC_PORT")),
-            "user": os.getenv("PRUEBAOTIC_USER"),
-            "password": os.getenv("PRUEBAOTIC_PASS"),
-            "verify_ssl": False
-        },
-        {
-            "name": "gestion",
-            "host": os.getenv("GESTION_HOST"),
-            "port": int(os.getenv("GESTION_PORT")),
-            "user": os.getenv("GESTION_USER"),
-            "password": os.getenv("GESTION_PASS"),
-            "verify_ssl": False
-        },
-    ]
+    {
+        "name": "csiceprod",
+        "host": os.getenv("CSICEPROD_HOST"),
+        "port": int(os.getenv("CSICEPROD_PORT")),
+        "user": os.getenv("CSICEPROD_USER"),
+        "password": os.getenv("CSICEPROD_PASS"),
+        "verify_ssl": False
+    },
+    {
+        "name": "dmz",
+        "host": os.getenv("DMZ_HOST"),
+        "port": int(os.getenv("DMZ_PORT")),
+        "user": os.getenv("DMZ_USER"),
+        "password": os.getenv("DMZ_PASS"),
+        "verify_ssl": False
+    },
+    {
+        "name": "aliados",
+        "host": os.getenv("ALIADOS_HOST"),
+        "port": int(os.getenv("ALIADOS_PORT")),
+        "user": os.getenv("ALIADOS_USER"),
+        "password": os.getenv("ALIADOS_PASS"),
+        "verify_ssl": False
+    },
+    {
+        "name": "master",
+        "host": os.getenv("MASTER_HOST"),
+        "port": int(os.getenv("MASTER_PORT")),
+        "user": os.getenv("MASTER_USER"),
+        "password": os.getenv("MASTER_PASS"),
+        "verify_ssl": False
+    },
+    {
+        "name": "pruebaotic",
+        "host": os.getenv("PRUEBAOTIC_HOST"),
+        "port": int(os.getenv("PRUEBAOTIC_PORT")),
+        "user": os.getenv("PRUEBAOTIC_USER"),
+        "password": os.getenv("PRUEBAOTIC_PASS"),
+        "verify_ssl": False
+    },
+    {
+        "name": "gestion",
+        "host": os.getenv("GESTION_HOST"),
+        "port": int(os.getenv("GESTION_PORT")),
+        "user": os.getenv("GESTION_USER"),
+        "password": os.getenv("GESTION_PASS"),
+        "verify_ssl": False
+    },
+]
 
 def get_server_config(server_name: str) -> Optional[Dict[str, Any]]:
     for server in PROXMOX_SERVERS:
@@ -105,7 +105,7 @@ def get_proxmox(server_name: str) -> ProxmoxAPI:
 
 # --- Scheduler de alertas ---
 previous_status = {}
-last_telegram_update_id = None  # <--- ESTA ES LA LÍNEA QUE TE FALTA AÑADIR
+last_telegram_update_id = None
 
 def send_telegram_alert(message: str):
     logger.info("ALERTA TELEGRAM: Preparando envio...")
@@ -148,7 +148,7 @@ def send_telegram_alert(message: str):
         except Exception as e:
             logger.error(f"Error enviando mensaje a Telegram (Parte {i+1}): {e}")
 
-            # =====================================================================
+# =====================================================================
 # --- NUEVA FUNCIONALIDAD: PROCESAR COMANDOS DEL MENÚ DE TELEGRAM ---
 # =====================================================================
 def poll_telegram_commands():
@@ -171,7 +171,7 @@ def poll_telegram_commands():
             text = message.get("text", "").strip()
             chat_id = str(message.get("chat", {}).get("id"))
 
-# Solo responde a tu Chat ID por seguridad
+            # Solo responde a tu Chat ID por seguridad
             if chat_id == TELEGRAM_CHAT_ID:
                 if text == "/listar":
                     msg = "🖥️ *Estado General de Nodos Proxmox:*\n\n"
